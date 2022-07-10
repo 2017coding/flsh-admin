@@ -2,7 +2,7 @@ import service from '@/utils/request'
 
 export const getAuthorityList = (data) => {
   return service({
-    url: '/selectRoleRecordPage',
+    url: '/manage/role/selectRoleRecordPage',
     method: 'post',
     data
   })
@@ -10,7 +10,7 @@ export const getAuthorityList = (data) => {
 
 export const createAuthority = (data) => {
   return service({
-    url: '/addRoleRecord',
+    url: '/manage/role/addRoleRecord',
     method: 'post',
     data
   })
@@ -18,7 +18,7 @@ export const createAuthority = (data) => {
 
 export const updateAuthority = (data) => {
   return service({
-    url: '/updateRoleRecord',
+    url: '/manage/role/updateRoleRecord',
     method: 'post',
     data
   })

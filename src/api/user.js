@@ -57,7 +57,7 @@ export const changePassword = (data) => {
 // @Router /user/getUserList [post]
 export const getUserList = (data) => {
   return service({
-    url: '/user/getUserList',
+    url: '/manage/user/selectUserInfoPage',
     method: 'post',
     data: data
   })

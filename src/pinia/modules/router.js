@@ -15,34 +15,13 @@ export const useRouterStore = defineStore('router', () => {
     const baseRouter = [{
       path: '/layout',
       name: 'layout',
-      component: 'view/layout/index.vue',
+      component: () => import('@/views/layout/index.vue'),
       meta: {
         title: '底层layout'
       },
       children: []
     }]
-    const asyncRouter = [
-      ...staticRoute,
-      {
-        path: '404',
-        name: '404',
-        hidden: true,
-        meta: {
-          title: '迷路了*。*',
-          closeTab: true,
-        },
-        component: 'view/error/index.vue'
-      }, {
-        path: 'reload',
-        name: 'Reload',
-        hidden: true,
-        meta: {
-          title: '',
-          closeTab: true,
-        },
-        component: 'view/error/reload.vue'
-      }
-    ]
+    const asyncRouter = staticRoute
     baseRouter[0].children = asyncRouter
     baseRouter.push({
       path: '/:catchAll(.*)',

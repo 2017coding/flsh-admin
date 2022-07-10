@@ -4,6 +4,26 @@ import { useUserStore } from '@/pinia/modules/user'
 import { emitter } from '@/utils/bus.js'
 import router from '@/router/index'
 
+function dataTrim(data) {
+  if (Array.isArray(data)) {
+    for (let item of data) {
+      if (typeof item === 'object') {
+        dataTrim(item)
+      } else if (typeof item === 'string') {
+        item = item.trim() // bug ?
+      }
+    }
+  } else if (typeof data === 'object') {
+    for (const key in data) {
+      if (typeof data[key] === 'object') {
+        dataTrim(data[key])
+      } else if (typeof data[key] === 'string') {
+        data[key] = data[key].trim()
+      }
+    }
+  }
+}
+
 const service = axios.create({
   baseURL: 'https://admin.fishingwhere.cn/v1',
   timeout: 99999
@@ -38,9 +58,16 @@ service.interceptors.request.use(
     const userStore = useUserStore()
     config.headers = {
       'Content-Type': 'application/json',
-      'x-token': userStore.token,
+      'token': userStore.token,
       'x-user-id': userStore.userInfo.ID,
       ...config.headers
+    }
+    // 全局去前后空格
+    try {
+      dataTrim(config.data)
+      dataTrim(config.params)
+    } catch (e) {
+      console.log(e)
     }
     return config
   },
@@ -59,7 +86,7 @@ service.interceptors.request.use(
  * 解析 axios response.
  * 返回 `msg` `code` `data` 字段
  */
- function resolveData (response) {
+function resolveData(response) {
   if (response.data instanceof Blob || typeof response.data === 'string') {
     return {
       code: response.status,
@@ -80,7 +107,7 @@ service.interceptors.request.use(
 /**
  * 转换响应值为 `error first` 的形式
  */
- function transformResponse (response) {
+function transformResponse(response) {
   const { code, msg, data } = resolveData(response)
   const error = (code < 200 || code >= 300) ? msg : null
   return [error, data, code]

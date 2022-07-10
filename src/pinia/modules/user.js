@@ -1,11 +1,10 @@
-import { login, getUserInfo, setSelfInfo } from '@/api/user'
+import { login, setSelfInfo } from '@/api/user'
 import { jsonInBlacklist } from '@/api/jwt'
 import router from '@/router/index'
 import { ElLoading, ElMessage } from 'element-plus'
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { useRouterStore } from './router'
-import userInfoJSON from './user.json'
 
 export const useUserStore = defineStore('user', () => {
   const loadingInstance = ref(null)
@@ -20,9 +19,6 @@ export const useUserStore = defineStore('user', () => {
     baseColor: '#fff'
   })
   const token = ref(window.localStorage.getItem('token') || '')
-  const setUserInfo = (val) => {
-    userInfo.value = val
-  }
 
   const setToken = (val) => {
     token.value = val
@@ -35,21 +31,6 @@ export const useUserStore = defineStore('user', () => {
     router.push({ name: 'Init', replace: true })
   }
 
-  const ResetUserInfo = (value = {}) => {
-    userInfo.value = {
-      ...userInfo.value,
-      ...value
-    }
-  }
-  /* 获取用户信息*/
-  const GetUserInfo = async() => {
-    // const res = await getUserInfo()
-    const res = userInfoJSON
-    if (res.code === 0) {
-      setUserInfo(res.data.userInfo)
-    }
-    return res
-  }
   /* 登录*/
   const LoginIn = async(loginInfo) => {
     loadingInstance.value = ElLoading.service({
@@ -59,32 +40,24 @@ export const useUserStore = defineStore('user', () => {
     console.log('await login(loginInfo)', await login(loginInfo))
     const [err, data] = await login(loginInfo)
     if (err) return
-    setUserInfo(data.user)
-    setToken(data.token)
-    try {
-      const routerStore = useRouterStore()
-      await routerStore.SetAsyncRouter()
-      const asyncRouters = routerStore.asyncRouters
-      asyncRouters.forEach(asyncRouter => {
-        router.addRoute(asyncRouter)
-      })
-      router.push({ name: userInfo.value.authority.defaultRouter })
-      loadingInstance.value.close()
-    } catch (e) {
-      console.log(e, '1111')
-    }
+    setToken(data)
+    const routerStore = useRouterStore()
+    const asyncRouters = routerStore.asyncRouters
+    asyncRouters.forEach(asyncRouter => {
+      router.addRoute(asyncRouter)
+    })
+    router.push('/home')
+    loadingInstance.value.close()
     return true
   }
   /* 登出*/
   const LoginOut = async() => {
-    const res = await jsonInBlacklist()
-    if (res.code === 0) {
-      token.value = ''
-      sessionStorage.clear()
-      localStorage.clear()
-      router.push({ name: 'Login', replace: true })
-      window.location.reload()
-    }
+    console.log('loginou')
+    token.value = ''
+    sessionStorage.clear()
+    localStorage.clear()
+    router.push('/login')
+    window.location.reload()
   }
   /* 清理数据 */
   const ClearStorage = async() => {
@@ -96,7 +69,6 @@ export const useUserStore = defineStore('user', () => {
   const changeSideMode = async(data) => {
     const res = await setSelfInfo({ sideMode: data })
     if (res.code === 0) {
-      userInfo.value.sideMode = data
       ElMessage({
         type: 'success',
         message: '设置成功'
@@ -138,8 +110,6 @@ export const useUserStore = defineStore('user', () => {
     userInfo,
     token,
     NeedInit,
-    ResetUserInfo,
-    GetUserInfo,
     LoginIn,
     LoginOut,
     changeSideMode,
