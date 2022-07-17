@@ -3,6 +3,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/pinia/modules/user'
 import { emitter } from '@/utils/bus.js'
 import router from '@/router/index'
+import { SERVICE_API } from '../config'
 
 function dataTrim(data) {
   if (Array.isArray(data)) {
@@ -25,7 +26,7 @@ function dataTrim(data) {
 }
 
 const service = axios.create({
-  baseURL: 'https://admin.fishingwhere.cn/v1',
+  baseURL: SERVICE_API,
   timeout: 99999
 })
 let acitveAxios = 0

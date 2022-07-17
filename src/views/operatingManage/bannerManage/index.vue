@@ -2,15 +2,23 @@
   <div class="authority">
     <div class="gva-table-box">
       <div class="gva-btn-list">
-        <el-button size="small" type="primary" icon="plus" @click="handleAdd">新增配置</el-button>
+        <el-button size="small" type="primary" icon="plus" @click="handleAdd">新增banner</el-button>
       </div>
       <el-table
         :data="tableData"
         row-key="roldId"
         style="width: 100%"
       >
-        <el-table-column align="left" label="类型" min-width="180" prop="configType" />
-        <el-table-column align="left" label="名称" min-width="180" prop="configValue" />
+        <el-table-column align="left" label="图片" min-width="180" prop="filePath">
+          <template #default="scope">
+            <img v-img-alert style="height: 100px" :src="scope.row.filePath">
+          </template>
+        </el-table-column>
+        <el-table-column align="left" label="跳转类型" min-width="180" prop="jumpType">
+          <template #default="scope">
+            {{ scope.row.jumpType }}
+          </template>
+        </el-table-column>
         <el-table-column align="left" label="操作" width="460">
           <template #default="scope">
             <el-button
@@ -45,18 +53,48 @@
     <!-- 新增角色弹窗 -->
     <el-dialog v-model="dialogFormVisible" :title="dialogTitle">
       <el-form ref="authorityForm" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="配置类型" prop="configType">
-          <el-select v-model="form.configType">
+        <el-form-item label="banner图">
+          <l-upload
+            :fileList="form.fileData.filePath ? [form.fileData] : []"
+            :upload-params="{
+              useTypeFlag: BANNER_TYPE.IMAGE,
+              fileTypeFlag: USE_TYPE.CAROUSEL,
+            }"
+            @change="changeImage"
+          />
+        </el-form-item>
+        <!-- <el-form-item label="上传类型" prop="fileTypeFlag">
+          <el-select v-model="form.fileTypeFlag">
             <el-option
-              v-for="item in DICT_TYPE_LIST"
+              v-for="item in bannerTypeList"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item> -->
+        <!-- <el-form-item label="使用场景" prop="useType">
+          <el-select v-model="form.useType">
+            <el-option
+              v-for="item in useTypeList"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item> -->
+        <el-form-item label="跳转类型" prop="jumpType">
+          <el-select v-model="form.jumpType">
+            <el-option
+              v-for="item in jumpTypeList"
               :key="item.value"
               :label="item.label"
               :value="item.value"
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="名称" prop="configValue">
-          <el-input v-model="form.configValue" placeholder="请输入名称" autocomplete="off" />
+        <el-form-item v-if="form.jumpType === JUMP_TYPE.LINK" label="跳转链接" prop="jumpUrl">
+          <el-input v-model="form.jumpUrl" placeholder="请输入名称" autocomplete="off" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -71,16 +109,17 @@
 
 <script setup>
 import {
-  getDictList,
-  addDict,
-  updateDict,
-  delDict,
+  getBannerList,
+  addBanner,
+  updateBanner,
+  delBanner,
 } from './service'
 
 import { ref } from 'vue'
 import { cloneDeep } from 'lodash'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { DICT_TYPE_LIST } from './config'
+import LUpload from '@/components/upload/index.vue'
+import { BANNER_TYPE, USE_TYPE, JUMP_TYPE, bannerTypeList, useTypeList, jumpTypeList } from './config'
 
 const dialogType = ref('add')
 
@@ -89,16 +128,37 @@ const dialogFormVisible = ref(false)
 const apiDialogFlag = ref(false)
 
 const form = ref({
-  configId: '',
-  configType: '',
-  configValue: ''
+  fileData: {},
+  bannerId: '',
+  bannerAccessId: '',
+  filePath: '',
+  fileTypeFlag: BANNER_TYPE.IMAGE,
+  useType: USE_TYPE.CAROUSEL,
+  jumpType: '',
+  jumpUrl: '',
 })
 const rules = ref({
-  configType: [
-    { required: true, message: '请输入配置类型', trigger: 'blur' }
+  fileData: [
+    { required: true, message: '请选择图片', trigger: 'blur' }
   ],
-  configValue: [
-    { required: true, message: '请输入名称', trigger: 'blur' },
+  useType: [
+    { required: true, message: '请选择使用场景', trigger: 'blur' }
+  ],
+  jumpType: [
+    { required: true, message: '请选择跳转类型', trigger: 'blur' },
+  ],
+  jumpUrl: [
+    { trigger: 'blur', validator: (rule, value, callback) => {
+      if (form.value.jumpType !== JUMP_TYPE.LINK) {
+        callback()
+        return
+      }
+      if (form.value.jumpUrl) {
+        callback(new Error("请输入跳转链接"))
+        return
+      }
+      callback()
+    }},
   ],
 })
 
@@ -121,7 +181,7 @@ const handleCurrentChange = (val) => {
 
 // 查询
 const getTableData = async() => {
-  const [err, table] = await getDictList({ pageNumber: page.value, pageSize: pageSize.value, ...searchInfo.value })
+  const [err, table] = await getBannerList({ pageNumber: page.value, pageSize: pageSize.value, ...searchInfo.value })
   if (err) return
   tableData.value = table.records
   total.value = table.total
@@ -131,6 +191,24 @@ const getTableData = async() => {
 
 getTableData()
 
+// 初始化表单
+const authorityForm = ref(null)
+const initForm = () => {
+  if (authorityForm.value) {
+    authorityForm.value.resetFields()
+  }
+  form.value = {
+    fileData: {},
+    bannerId: '',
+    bannerAccessId: '',
+    filePath: '',
+    fileTypeFlag: BANNER_TYPE.IMAGE,
+    useType: USE_TYPE.CAROUSEL,
+    jumpType: '',
+    jumpUrl: '',
+  }
+}
+
 // 删除
 const handleDel = (row) => {
   ElMessageBox.confirm('此操作将永久删除该数据, 是否继续?', '提示', {
@@ -139,7 +217,7 @@ const handleDel = (row) => {
     type: 'warning'
   })
     .then(async() => {
-      const [err] = await delDict({ configId: row.configId })
+      const [err] = await delBanner({ bannerId: row.bannerId })
       if (err) return
       ElMessage({
         type: 'success',
@@ -157,18 +235,6 @@ const handleDel = (row) => {
       })
     })
 }
-// 初始化表单
-const authorityForm = ref(null)
-const initForm = () => {
-  if (authorityForm.value) {
-    authorityForm.value.resetFields()
-  }
-  form.value = {
-    configKeyId: '',
-    configType: '',
-    configValue: ''
-  }
-}
 
 // 关闭窗口
 const closeDialog = () => {
@@ -182,7 +248,10 @@ const enterDialog = () => {
   authorityForm.value.validate(async valid => {
     if (valid) {
       const params = cloneDeep(form.value)
-      const fn = dialogType.value === 'add' ? addDict : updateDict
+      const fn = dialogType.value === 'add' ? addBanner : updateBanner
+      params.filePath = params.fileData.fileServer
+      params.bannerAccessId = params.fileData.fileAccessId
+      delete params.fileData
       const [err] = await fn(params)
       if (err) return
       ElMessage({
@@ -199,19 +268,25 @@ const enterDialog = () => {
 // 增加
 const handleAdd = (parentId) => {
   initForm()
-  dialogTitle.value = '新增配置'
+  dialogTitle.value = '新增banner'
   dialogType.value = 'add'
-  form.value.parentId = parentId
   dialogFormVisible.value = true
 }
 // 编辑
 const handleEdit = (row) => {
-  dialogTitle.value = '编辑配置'
+  dialogTitle.value = '编辑banner'
   dialogType.value = 'edit'
   for (const key in form.value) {
     form.value[key] = row[key]
   }
+  form.value.fileData = {
+    filePath: row.filePath
+  }
   dialogFormVisible.value = true
+}
+
+function changeImage(e) {
+  form.value.fileData = e
 }
 
 </script>

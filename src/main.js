@@ -7,13 +7,19 @@ import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import './core/icon'
 // 引入封装的router
 import router from '@/router/index'
+import dirctives from '@/dirctives' // dirctives
 import '@/permission'
 import run from '@/core/icon.js'
-import auth from '@/directive/auth'
+import auth from '@/dirctives/auth'
 import { store } from '@/pinia'
 import App from './App.vue'
+
 const app = createApp(App)
 app.config.productionTip = false
+
+Object.keys(dirctives).forEach(key => {
+  app.use(dirctives[key])
+})
 
 app
   .use(run)

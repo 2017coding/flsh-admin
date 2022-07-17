@@ -1,32 +1,32 @@
 import http from '@/utils/request'
 
-export const getDictList = (data) => {
+export const getBannerList = (data) => {
   return http({
-    url: '/manage/config/selectConfigInfoPage',
+    url: '/manage/banner/selectBannerInfoPage',
     method: 'post',
     data: data
   })
 }
 
-export function addDict(data) {
+export function addBanner(data) {
   return http({
-    url: '/manage/config/addOrUpdateConfigInfo',
+    url: '/manage/banner/addBannerInfo',
     method: 'post',
     data: { ...data, operateType: 1 }
   })
 }
 
-export function updateDict(data) {
+export function updateBanner(data) {
   return http({
-    url: '/manage/config/addOrUpdateConfigInfo',
+    url: '/manage/banner/updateBannerInfo',
     method: 'post',
     data: { ...data, operateType: 2 }
   })
 }
 
-export function delDict(data) {
+export function delBanner(data) {
   return http({
-    url: '/manage/config/addOrUpdateConfigInfo',
+    url: '/manage/banner/updateBannerInfo',
     method: 'post',
     data: { ...data, operateType: 3 }
   })

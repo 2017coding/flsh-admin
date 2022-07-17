@@ -2,26 +2,34 @@
 <template>
   <div>
     <el-upload
-      :action="`${path}/fileUploadAndDownload/upload`"
-      :headers="{ 'x-token': userStore.token }"
-      :show-file-list="false"
+      v-model="fileList"
+      list-type="picture-card"
+      :action="`${SERVICE_API}/manage/uploadFile/uploadFile`"
+      :headers="{ 'token': userStore.token }"
+      :data="uploadParams"
       :on-success="handleImageSuccess"
       :before-upload="beforeImageUpload"
-      :multiple="false"
+      :limit="1"
     >
-      <el-button size="small" type="primary">压缩上传</el-button>
+      <el-icon><Plus /></el-icon>
+      <!-- <el-button size="small" type="primary">上传文件</el-button> -->
     </el-upload>
   </div>
 </template>
 
 <script setup>
 import ImageCompress from '@/utils/image'
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/pinia/modules/user'
+import { SERVICE_API } from '@/config'
 
-const emit = defineEmits(['on-success'])
+const emit = defineEmits(['on-success', 'input', 'change', 'on-change'])
 const props = defineProps({
+  fileList: {
+    type: Array,
+    default: () => ([])
+  },
   imageUrl: {
     type: String,
     default: ''
@@ -30,21 +38,39 @@ const props = defineProps({
     type: Number,
     default: 2048 // 2M 超出后执行压缩
   },
+  uploadParams: {
+    type: Object,
+    default: () => ({})
+  },
   maxWH: {
     type: Number,
     default: 1920 // 图片长宽上限
   }
 })
 
+watch(() => props.fileList, val => {
+  console.log('val', val)
+}, { immediate: true, deep: true })
+
 const path = ref(import.meta.env.VITE_BASE_API)
 
 const userStore = useUserStore()
+
+const fileList = computed(() => {
+  return props.fileList.map(item => {
+    return {
+      ...item,
+      url: item.filePath
+    }
+  })
+})
+
 
 const beforeImageUpload = (file) => {
   const isJPG = file.type === 'image/jpeg'
   const isPng = file.type === 'image/png'
   if (!isJPG && !isPng) {
-    ElMessage.error('上传头像图片只能是 jpg或png 格式!')
+    ElMessage.error('上传图片只能是 jpg或png 格式!')
     return false
   }
 
@@ -59,9 +85,9 @@ const beforeImageUpload = (file) => {
 
 const handleImageSuccess = (res) => {
   const { data } = res
-  if (data.file) {
-    emit('on-success', data.file.url)
-  }
+  emit('on-input', data)
+  emit('change', data)
+  emit('on-change', data)
 }
 
 </script>

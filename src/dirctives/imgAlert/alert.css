@@ -1,0 +1,31 @@
+.g-img-alert{
+}
+.g-img-alert-mask{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, .5);
+  z-index: 9999;
+}
+.g-img-alert-content{
+  padding: 10px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 10001;
+  transform: translate(-50%, -50%);
+  border-radius: 10px;
+  text-align: center;
+}
+.g-img-alert-img{
+  border-radius: 10px;
+  border: 10px solid white;
+}
+.width-image{
+  width: 50vw;
+}
+.height-image{
+  height: 80vh;
+}
